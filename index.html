@@ -1,0 +1,643 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Contretemps">
+<meta name="theme-color" content="#181714">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon-180.png">
+<style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}*{box-sizing:border-box}[hidden]{display:none!important}</style>
+</head>
+<body>
+<title>Contretemps</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@500;800&family=IBM+Plex+Sans+Condensed:wght@400;500;600&display=swap">
+<style>
+  :root {
+    color-scheme: dark;
+    --tolex: #181714;
+    --panel: #23211d;
+    --panel-2: #2d2a25;
+    --line: #3a3630;
+    --cream: #efe6d2;
+    --dim: #a39a88;
+    --amber: #f07b16;
+    --amber-deep: #c65f08;
+    --amber-hi: #ffac5c;
+    --sage: #86b5a8;
+    --red: #d9624a;
+    --display: "Big Shoulders Display", "Arial Narrow", Impact, sans-serif;
+    --ui: "IBM Plex Sans Condensed", "Arial Narrow", system-ui, sans-serif;
+  }
+  html, body { height: 100%; }
+  body {
+    background: var(--tolex);
+    color: var(--cream);
+    font: 15px/1.4 var(--ui);
+    -webkit-tap-highlight-color: transparent;
+    -webkit-user-select: none; user-select: none;
+    touch-action: manipulation;
+  }
+  .app {
+    max-width: 480px; margin: 0 auto;
+    padding-inline: 16px; padding-block: 12px 28px;
+    display: flex; flex-direction: column; gap: 16px;
+  }
+  header { display: flex; align-items: baseline; justify-content: space-between; }
+  h1 { font: 800 22px/1 var(--display); letter-spacing: .06em; text-transform: uppercase; margin: 0; }
+  h1 span { color: var(--amber); }
+  .meta { color: var(--dim); font-size: 13px; letter-spacing: .04em; font-variant-numeric: tabular-nums; }
+
+  /* Beat cells */
+  .beats { display: flex; gap: 5px; height: 64px; align-items: flex-end; }
+  .cell {
+    flex: 1; min-width: 0; border: 0; padding: 0; cursor: pointer;
+    background: var(--panel-2); border-radius: 4px;
+    position: relative; height: 100%;
+    display: flex; align-items: flex-end;
+  }
+  .cell i { display: block; width: 100%; border-radius: 4px; background: var(--line); transition: background .06s; }
+  .cell[data-l="3"] i { height: 100%; }
+  .cell[data-l="2"] i { height: 72%; }
+  .cell[data-l="1"] i { height: 44%; }
+  .cell[data-l="0"] i { height: 8%; background: transparent; outline: 1px dashed var(--line); outline-offset: -1px; }
+  .cell.group::before { content: ""; position: absolute; left: -3px; top: 6px; bottom: 6px; width: 1px; background: var(--dim); opacity: .5; }
+  .cell.on i { background: var(--amber); }
+  .cell.on[data-l="3"] i { background: var(--amber-hi); }
+  .beats.silent .cell.on i { background: var(--dim); }
+  .hint { color: var(--dim); font-size: 12px; margin-top: -8px; }
+
+  /* Tempo block */
+  .tempo {
+    background: var(--panel); border-radius: 14px; padding: 14px 12px 16px;
+    display: grid; grid-template-columns: 64px 1fr 64px; align-items: center; gap: 8px;
+    position: relative; overflow: hidden;
+  }
+  .tempo.flash { box-shadow: inset 0 0 0 2px var(--amber); }
+  .pendulum { position: absolute; left: 50%; bottom: -8px; width: 2px; height: 150%; transform-origin: 50% 100%;
+    background: linear-gradient(to top, transparent, rgba(240,123,22,.16) 30%, rgba(240,123,22,.16)); transform: rotate(0deg); pointer-events: none; }
+  .bpm { text-align: center; position: relative; }
+  .bpm output { display: block; font: 800 96px/0.9 var(--display); font-variant-numeric: tabular-nums; letter-spacing: -.01em; }
+  .bpm small { display: block; margin-top: 6px; color: var(--dim); font-size: 12px; letter-spacing: .14em; text-transform: uppercase; }
+  .bpm small b { color: var(--amber); font-weight: 600; }
+  .step {
+    height: 64px; border-radius: 50%; border: 1px solid var(--line); background: var(--panel-2);
+    color: var(--cream); font: 500 34px/1 var(--display); cursor: pointer; position: relative;
+  }
+  .step:active { background: var(--line); }
+  input[type=range] { width: 100%; accent-color: var(--amber); grid-column: 1 / -1; margin: 4px 0 0; height: 28px; }
+
+  .transport { display: grid; grid-template-columns: 1fr 104px; gap: 10px; }
+  .play {
+    height: 72px; border: 0; border-radius: 14px; cursor: pointer;
+    background: var(--amber); color: #1d1406;
+    font: 800 26px/1 var(--display); letter-spacing: .12em; text-transform: uppercase;
+  }
+  .play.running { background: var(--cream); }
+  .tap {
+    height: 72px; border-radius: 14px; border: 1px solid var(--line); background: var(--panel);
+    color: var(--cream); font: 800 22px/1 var(--display); letter-spacing: .12em; cursor: pointer;
+  }
+  .tap:active, .tap.hit { background: var(--panel-2); border-color: var(--amber); }
+
+  /* Tabs */
+  .tabs { display: grid; grid-template-columns: repeat(5, 1fr); gap: 4px; background: var(--panel); padding: 4px; border-radius: 12px; }
+  .tabs button {
+    border: 0; background: transparent; color: var(--dim); padding: 9px 2px; border-radius: 9px; cursor: pointer;
+    font: 600 12px/1 var(--ui); letter-spacing: .05em; text-transform: uppercase;
+  }
+  .tabs button[aria-selected="true"] { background: var(--panel-2); color: var(--cream); }
+  .panel { display: flex; flex-direction: column; gap: 14px; }
+  .label { color: var(--dim); font-size: 12px; letter-spacing: .1em; text-transform: uppercase; margin-bottom: 6px; }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; }
+  .chip {
+    border: 1px solid var(--line); background: var(--panel); color: var(--cream);
+    padding: 9px 12px; border-radius: 999px; cursor: pointer; font: 500 15px/1 var(--ui);
+    font-variant-numeric: tabular-nums; display: inline-flex; align-items: center; gap: 6px;
+  }
+  .chip[aria-pressed="true"] { background: var(--amber); border-color: var(--amber); color: #1d1406; }
+  .chip svg { width: 30px; height: 16px; }
+  .row { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+  .row label { flex: 1; }
+  .row input[type=range] { flex: 1.4; grid-column: auto; }
+  .num {
+    display: grid; grid-template-columns: 36px 52px 36px; align-items: center;
+    border: 1px solid var(--line); border-radius: 10px; overflow: hidden; background: var(--panel);
+  }
+  .num button { height: 38px; border: 0; background: transparent; color: var(--cream); font-size: 20px; cursor: pointer; }
+  .num output { text-align: center; font: 500 17px/1 var(--ui); font-variant-numeric: tabular-nums; }
+  .card { background: var(--panel); border-radius: 12px; padding: 12px; display: flex; flex-direction: column; gap: 10px; }
+  .switch { display: flex; align-items: center; justify-content: space-between; font-weight: 600; }
+  .switch input { width: 48px; height: 28px; accent-color: var(--amber); }
+  .note { color: var(--dim); font-size: 13px; margin: 0; }
+  .status { color: var(--sage); font-size: 13px; font-variant-numeric: tabular-nums; min-height: 1.2em; }
+
+  .strings { display: grid; grid-template-columns: repeat(6, 1fr); gap: 6px; }
+  .string {
+    border: 1px solid var(--line); background: var(--panel); color: var(--cream); border-radius: 12px;
+    padding: 12px 0 10px; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 4px;
+  }
+  .string b { font: 800 26px/1 var(--display); }
+  .string span { color: var(--dim); font-size: 11px; font-variant-numeric: tabular-nums; }
+  .string[aria-pressed="true"] { border-color: var(--sage); background: #22302c; }
+  .string[aria-pressed="true"] span { color: var(--sage); }
+
+  .presets { display: flex; flex-direction: column; gap: 6px; }
+  .preset { display: grid; grid-template-columns: 1fr auto; background: var(--panel); border-radius: 12px; overflow: hidden; }
+  .preset button { border: 0; background: transparent; color: var(--cream); cursor: pointer; text-align: left; padding: 11px 12px; font: inherit; }
+  .preset .del { color: var(--dim); padding: 0 16px; font-size: 20px; }
+  .preset small { display: block; color: var(--dim); font-size: 12px; font-variant-numeric: tabular-nums; }
+  .save { display: grid; grid-template-columns: 1fr auto; gap: 6px; }
+  .save input {
+    background: var(--panel); border: 1px solid var(--line); color: var(--cream); border-radius: 10px;
+    padding: 10px 12px; font: 16px var(--ui); min-width: 0; -webkit-user-select: text; user-select: text;
+  }
+  .save button { border: 0; background: var(--panel-2); color: var(--cream); border-radius: 10px; padding: 0 16px; font: 600 14px var(--ui); cursor: pointer; }
+  button:focus-visible, input:focus-visible { outline: 2px solid var(--amber); outline-offset: 2px; }
+  @media (prefers-reduced-motion: reduce) { .pendulum { transition: none !important; } }
+</style>
+
+<div class="app">
+  <header>
+    <h1>Contre<span>temps</span></h1>
+    <div class="meta" id="meta">4/4 · noires</div>
+  </header>
+
+  <div class="beats" id="beats" aria-label="Temps de la mesure"></div>
+  <div class="hint">Touche un temps pour changer son accent : fort, moyen, normal, muet.</div>
+
+  <section class="tempo" id="tempo">
+    <div class="pendulum" id="pendulum"></div>
+    <button class="step" id="minus" aria-label="Ralentir">−</button>
+    <div class="bpm">
+      <output id="bpm">100</output>
+      <small><b id="tname">Andante</b> · BPM</small>
+    </div>
+    <button class="step" id="plus" aria-label="Accélérer">+</button>
+    <input type="range" id="slider" min="30" max="300" value="100" aria-label="Tempo">
+  </section>
+
+  <div class="transport">
+    <button class="play" id="play">Jouer</button>
+    <button class="tap" id="tap">TAP</button>
+  </div>
+
+  <nav class="tabs" role="tablist">
+    <button role="tab" data-tab="rythme" aria-selected="true">Rythme</button>
+    <button role="tab" data-tab="son" aria-selected="false">Son</button>
+    <button role="tab" data-tab="coach" aria-selected="false">Coach</button>
+    <button role="tab" data-tab="accord" aria-selected="false">Accord</button>
+    <button role="tab" data-tab="presets" aria-selected="false">Presets</button>
+  </nav>
+
+  <section class="panel" data-panel="rythme">
+    <div>
+      <div class="label">Mesure</div>
+      <div class="chips" id="meters"></div>
+    </div>
+    <div>
+      <div class="label">Subdivision</div>
+      <div class="chips" id="subs"></div>
+    </div>
+  </section>
+
+  <section class="panel" data-panel="son" hidden>
+    <div>
+      <div class="label">Timbre</div>
+      <div class="chips" id="sounds"></div>
+    </div>
+    <div class="card">
+      <div class="row"><label for="vol">Volume</label><input type="range" id="vol" min="0" max="100"></div>
+      <div class="row"><label for="subvol">Subdivisions</label><input type="range" id="subvol" min="0" max="100"></div>
+    </div>
+    <p class="note">Sur iPhone, le son passe même en mode silencieux (iOS 17 et plus). Monte le volume avec les boutons latéraux.</p>
+  </section>
+
+  <section class="panel" data-panel="coach" hidden>
+    <div class="card">
+      <label class="switch" for="trOn">Montée progressive <input type="checkbox" id="trOn"></label>
+      <div class="row"><span>Départ</span><div class="num" data-k="trStart"></div></div>
+      <div class="row"><span>Objectif</span><div class="num" data-k="trTarget"></div></div>
+      <div class="row"><span>+ BPM</span><div class="num" data-k="trStep"></div></div>
+      <div class="row"><span>toutes les … mesures</span><div class="num" data-k="trBars"></div></div>
+    </div>
+    <div class="card">
+      <label class="switch" for="gapOn">Mesures muettes <input type="checkbox" id="gapOn"></label>
+      <div class="row"><span>Mesures jouées</span><div class="num" data-k="gapPlay"></div></div>
+      <div class="row"><span>Mesures muettes</span><div class="num" data-k="gapMute"></div></div>
+      <p class="note">Le clic disparaît pendant quelques mesures : tu dois retomber pile dessus quand il revient.</p>
+    </div>
+    <div class="status" id="status"></div>
+  </section>
+
+  <section class="panel" data-panel="accord" hidden>
+    <div class="label">Note de référence · accordage standard</div>
+    <div class="strings" id="strings"></div>
+    <p class="note">Touche une corde pour entendre la note en continu, touche-la encore pour couper. La = 440 Hz.</p>
+  </section>
+
+  <section class="panel" data-panel="presets" hidden>
+    <form class="save" id="saveForm">
+      <input id="presetName" placeholder="Nom (ex. Solo couplet)" maxlength="40" autocomplete="off">
+      <button type="submit">Enregistrer</button>
+    </form>
+    <div class="presets" id="presets"></div>
+  </section>
+</div>
+
+<script>
+(() => {
+  const $ = s => document.querySelector(s);
+  const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+
+  const METERS = [
+    { id: '2/4', groups: [1, 1] },
+    { id: '3/4', groups: [1, 1, 1] },
+    { id: '4/4', groups: [1, 1, 1, 1] },
+    { id: '5/4', groups: [1, 1, 1, 1, 1] },
+    { id: '6/8', groups: [3, 3] },
+    { id: '7/8', groups: [2, 2, 3] },
+    { id: '9/8', groups: [3, 3, 3] },
+    { id: '12/8', groups: [3, 3, 3, 3] },
+  ];
+  // offsets inside one pulse; icon drawn as note heads
+  const SUBS = [
+    { id: '1', name: 'Noires', offs: [0] },
+    { id: '2', name: 'Croches', offs: [0, .5] },
+    { id: '3', name: 'Triolets', offs: [0, 1/3, 2/3] },
+    { id: '4', name: 'Doubles', offs: [0, .25, .5, .75] },
+    { id: 'sw', name: 'Shuffle', offs: [0, 2/3] },
+    { id: 'gal', name: 'Galop', offs: [0, .5, .75] },
+  ];
+  const SOUNDS = [
+    { id: 'click', name: 'Clic' },
+    { id: 'wood', name: 'Bois' },
+    { id: 'drum', name: 'Batterie' },
+  ];
+  const STRINGS = [
+    { n: 'E', o: 2, f: 82.41 }, { n: 'A', o: 2, f: 110.00 }, { n: 'D', o: 3, f: 146.83 },
+    { n: 'G', o: 3, f: 196.00 }, { n: 'B', o: 3, f: 246.94 }, { n: 'e', o: 4, f: 329.63 },
+  ];
+  const EXAMPLES = [
+    { name: 'Exemple · Blues shuffle', bpm: 84, meter: '4/4', sub: 'sw', sound: 'drum' },
+    { name: 'Exemple · Galop metal', bpm: 150, meter: '4/4', sub: 'gal', sound: 'click' },
+    { name: 'Exemple · Ballade 6/8', bpm: 132, meter: '6/8', sub: '1', sound: 'wood' },
+  ];
+
+  const defaultPattern = id => {
+    const m = METERS.find(x => x.id === id);
+    const p = [];
+    m.groups.forEach((g, gi) => { for (let i = 0; i < g; i++) p.push(i === 0 ? (gi === 0 ? 3 : (g > 1 ? 2 : 1)) : 1); });
+    return p;
+  };
+
+  const S = {
+    bpm: 100, meter: '4/4', pattern: defaultPattern('4/4'), sub: '1', sound: 'click', vol: 80, subVol: 55,
+    trOn: false, trStart: 80, trTarget: 120, trStep: 5, trBars: 4,
+    gapOn: false, gapPlay: 3, gapMute: 1,
+    presets: EXAMPLES,
+  };
+  const LIMITS = { trStart: [30, 300, 1], trTarget: [30, 300, 1], trStep: [1, 20, 1], trBars: [1, 32, 1], gapPlay: [1, 16, 1], gapMute: [1, 16, 1] };
+
+  try { Object.assign(S, JSON.parse(localStorage.getItem('contretemps') || '{}')); } catch (e) {}
+  const save = () => { try { localStorage.setItem('contretemps', JSON.stringify(S)); } catch (e) {} };
+
+  // ---------- Audio ----------
+  let ctx, master, noise, toneNode = null;
+  function ensureAudio() {
+    if (ctx) { if (ctx.state !== 'running') ctx.resume(); return; }
+    try { if (navigator.audioSession) navigator.audioSession.type = 'playback'; } catch (e) {}
+    ctx = new (window.AudioContext || window.webkitAudioContext)();
+    master = ctx.createGain(); master.connect(ctx.destination);
+    master.gain.value = S.vol / 100;
+    const len = ctx.sampleRate * 0.3;
+    noise = ctx.createBuffer(1, len, ctx.sampleRate);
+    const d = noise.getChannelData(0);
+    for (let i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
+    const b = ctx.createBufferSource(); b.buffer = ctx.createBuffer(1, 1, 22050); b.connect(ctx.destination); b.start(0);
+  }
+
+  function env(t, peak, dur) {
+    const g = ctx.createGain();
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(peak, t + 0.002);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    g.connect(master);
+    return g;
+  }
+  function tone(t, type, f0, f1, peak, dur) {
+    const o = ctx.createOscillator(); o.type = type;
+    o.frequency.setValueAtTime(f0, t);
+    if (f1 !== f0) o.frequency.exponentialRampToValueAtTime(f1, t + dur * 0.6);
+    o.connect(env(t, peak, dur)); o.start(t); o.stop(t + dur + 0.02);
+  }
+  function hat(t, peak, dur) {
+    const s = ctx.createBufferSource(); s.buffer = noise;
+    const hp = ctx.createBiquadFilter(); hp.type = 'highpass'; hp.frequency.value = 7000;
+    s.connect(hp); hp.connect(env(t, peak, dur)); s.start(t); s.stop(t + dur + 0.02);
+  }
+  // bass drum: pitch-dropping sine body + short beater click
+  function kick(t) {
+    const o = ctx.createOscillator(); o.type = 'sine';
+    o.frequency.setValueAtTime(150, t);
+    o.frequency.exponentialRampToValueAtTime(48, t + 0.12);
+    const g = ctx.createGain();
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(1, t + 0.003);
+    g.gain.setValueAtTime(1, t + 0.02);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + 0.42);
+    o.connect(g); g.connect(master); o.start(t); o.stop(t + 0.45);
+    const s = ctx.createBufferSource(); s.buffer = noise;
+    const lp = ctx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 3000;
+    s.connect(lp); lp.connect(env(t, .35, .015)); s.start(t); s.stop(t + 0.03);
+  }
+  // kind: 3 downbeat, 2 accent, 1 beat, 's' subdivision
+  function playClick(t, kind) {
+    const sv = S.subVol / 100;
+    if (S.sound === 'click') {
+      const f = { 3: 1760, 2: 1400, 1: 1050, s: 760 }[kind];
+      const p = { 3: 1, 2: .85, 1: .6, s: .45 * sv }[kind];
+      tone(t, 'sine', f, f, p, .035);
+      if (kind === 3) tone(t, 'square', f * 2, f * 2, .08, .01);
+    } else if (S.sound === 'wood') {
+      const f = { 3: 1250, 2: 1000, 1: 820, s: 620 }[kind];
+      const p = { 3: 1, 2: .85, 1: .65, s: .5 * sv }[kind];
+      tone(t, 'triangle', f * 1.5, f, p, .07);
+    } else {
+      if (kind === 3) kick(t);
+      else if (kind === 2) { tone(t, 'sine', 190, 170, .5, .1); hat(t, .5, .09); }
+      else if (kind === 1) hat(t, .55, .05);
+      else hat(t, .35 * sv, .03);
+    }
+  }
+
+  // ---------- Scheduler ----------
+  let running = false, timer = null, nextBeat = 0, beatIdx = 0, bar = 0, barSilent = false;
+  const queue = [];
+  const meterObj = () => METERS.find(m => m.id === S.meter);
+  function scheduler() {
+    while (nextBeat < ctx.currentTime + 0.12) {
+      if (beatIdx === 0) {
+        barSilent = S.gapOn && (bar % (S.gapPlay + S.gapMute)) >= S.gapPlay;
+      }
+      const spb = 60 / S.bpm;
+      const lvl = S.pattern[beatIdx] ?? 1;
+      if (!barSilent && lvl > 0) {
+        SUBS.find(s => s.id === S.sub).offs.forEach((o, i) => playClick(nextBeat + o * spb, i === 0 ? lvl : 's'));
+      }
+      queue.push({ t: nextBeat, beat: beatIdx, silent: barSilent, spb });
+      nextBeat += spb;
+      beatIdx++;
+      if (beatIdx >= S.pattern.length) { beatIdx = 0; endOfBar(); }
+    }
+  }
+  function endOfBar() {
+    bar++;
+    if (S.trOn && bar % S.trBars === 0) {
+      const dir = Math.sign(S.trTarget - S.bpm);
+      if (dir) setBpm(dir > 0 ? Math.min(S.trTarget, S.bpm + S.trStep) : Math.max(S.trTarget, S.bpm - S.trStep));
+    }
+    updateStatus();
+  }
+
+  let wakeLock = null;
+  async function lockScreen() {
+    try { if ('wakeLock' in navigator && document.visibilityState === 'visible') wakeLock = await navigator.wakeLock.request('screen'); } catch (e) {}
+  }
+  document.addEventListener('visibilitychange', () => { if (running && document.visibilityState === 'visible') lockScreen(); });
+
+  function start() {
+    ensureAudio();
+    if (S.trOn) setBpm(S.trStart);
+    running = true; beatIdx = 0; bar = 0; queue.length = 0;
+    nextBeat = ctx.currentTime + 0.08;
+    scheduler(); timer = setInterval(scheduler, 25);
+    $('#play').textContent = 'Stop'; $('#play').classList.add('running');
+    lockScreen(); updateStatus();
+  }
+  function stop() {
+    running = false; clearInterval(timer); queue.length = 0;
+    $('#play').textContent = 'Jouer'; $('#play').classList.remove('running');
+    document.querySelectorAll('.cell.on').forEach(c => c.classList.remove('on'));
+    $('#beats').classList.remove('silent');
+    $('#pendulum').style.transition = 'transform .3s'; $('#pendulum').style.transform = 'rotate(0deg)';
+    try { wakeLock && wakeLock.release(); } catch (e) {} wakeLock = null;
+    updateStatus();
+  }
+
+  // visuals
+  let side = 1;
+  const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  function draw() {
+    if (running && ctx) {
+      let ev = null;
+      while (queue.length && queue[0].t <= ctx.currentTime) ev = queue.shift();
+      if (ev) {
+        const cells = $('#beats').children;
+        for (const c of cells) c.classList.remove('on');
+        if (cells[ev.beat]) cells[ev.beat].classList.add('on');
+        $('#beats').classList.toggle('silent', ev.silent);
+        const tempo = $('#tempo');
+        if (ev.beat === 0 && !ev.silent) { tempo.classList.add('flash'); setTimeout(() => tempo.classList.remove('flash'), 90); }
+        if (!reduced) {
+          side = -side;
+          const p = $('#pendulum');
+          p.style.transition = `transform ${ev.spb}s cubic-bezier(.45,0,.55,1)`;
+          p.style.transform = `rotate(${side * 22}deg)`;
+        }
+      }
+    }
+    requestAnimationFrame(draw);
+  }
+  requestAnimationFrame(draw);
+
+  // ---------- UI ----------
+  const tempoName = b => b < 40 ? 'Grave' : b < 60 ? 'Largo' : b < 66 ? 'Larghetto' : b < 76 ? 'Adagio' : b < 108 ? 'Andante'
+    : b < 120 ? 'Moderato' : b < 168 ? 'Allegro' : b < 200 ? 'Presto' : 'Prestissimo';
+
+  function setBpm(v) {
+    S.bpm = clamp(Math.round(v), 30, 300);
+    $('#bpm').textContent = S.bpm;
+    $('#slider').value = S.bpm;
+    $('#tname').textContent = tempoName(S.bpm);
+    save();
+  }
+
+  function renderBeats() {
+    const box = $('#beats'); box.innerHTML = '';
+    const starts = new Set(); let acc = 0;
+    meterObj().groups.forEach(g => { starts.add(acc); acc += g; });
+    S.pattern.forEach((l, i) => {
+      const b = document.createElement('button');
+      b.className = 'cell' + (i > 0 && starts.has(i) && meterObj().groups[0] > 1 ? ' group' : '');
+      b.dataset.l = l; b.setAttribute('aria-label', `Temps ${i + 1}`);
+      b.innerHTML = '<i></i>';
+      b.onclick = () => { S.pattern[i] = (S.pattern[i] + 3) % 4; b.dataset.l = S.pattern[i]; save(); };
+      box.appendChild(b);
+    });
+    const unit = S.meter.endsWith('/8') ? 'croches' : 'noires';
+    $('#meta').textContent = `${S.meter} · pulsation ${unit}`;
+  }
+
+  function chips(el, items, key, label, onPick) {
+    el.innerHTML = '';
+    items.forEach(it => {
+      const b = document.createElement('button');
+      b.className = 'chip'; b.innerHTML = label(it);
+      b.setAttribute('aria-pressed', S[key] === it.id);
+      b.onclick = () => { S[key] = it.id; onPick && onPick(it); save(); chips(el, items, key, label, onPick); };
+      el.appendChild(b);
+    });
+  }
+  const subIcon = s => {
+    const w = 30, heads = s.offs.map(o => `<circle cx="${3 + o * 24}" cy="12" r="2.6" fill="currentColor"/>`).join('');
+    return `<svg viewBox="0 0 ${w} 16" aria-hidden="true"><line x1="1" y1="15" x2="29" y2="15" stroke="currentColor" stroke-opacity=".35"/>${heads}</svg>`;
+  };
+
+  function renderAll() {
+    setBpm(S.bpm);
+    if (!S.pattern || S.pattern.length !== defaultPattern(S.meter).length) S.pattern = defaultPattern(S.meter);
+    renderBeats();
+    chips($('#meters'), METERS, 'meter', m => m.id, () => { S.pattern = defaultPattern(S.meter); renderBeats(); beatIdx = 0; });
+    chips($('#subs'), SUBS, 'sub', s => subIcon(s) + s.name);
+    chips($('#sounds'), SOUNDS, 'sound', s => s.name, () => { if (!running) { ensureAudio(); playClick(ctx.currentTime + .01, 3); } });
+    $('#vol').value = S.vol; $('#subvol').value = S.subVol;
+    $('#trOn').checked = S.trOn; $('#gapOn').checked = S.gapOn;
+    document.querySelectorAll('.num').forEach(renderNum);
+    renderPresets(); updateStatus();
+  }
+
+  function renderNum(el) {
+    const k = el.dataset.k, [lo, hi] = LIMITS[k];
+    el.innerHTML = `<button aria-label="Moins">−</button><output>${S[k]}</output><button aria-label="Plus">+</button>`;
+    const [m, , p] = el.children;
+    const bump = d => { S[k] = clamp(S[k] + d, lo, hi); el.children[1].textContent = S[k]; save(); updateStatus(); };
+    holdRepeat(m, () => bump(-1)); holdRepeat(p, () => bump(1));
+  }
+
+  function holdRepeat(btn, fn) {
+    let t1, t2;
+    const end = () => { clearTimeout(t1); clearInterval(t2); };
+    btn.addEventListener('pointerdown', e => { e.preventDefault(); fn(); t1 = setTimeout(() => { t2 = setInterval(fn, 60); }, 380); });
+    ['pointerup', 'pointerleave', 'pointercancel'].forEach(ev => btn.addEventListener(ev, end));
+    btn.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); fn(); } });
+  }
+
+  function updateStatus() {
+    const parts = [];
+    if (S.trOn) parts.push(`Montée : ${S.trStart} → ${S.trTarget} BPM, +${S.trStep} toutes les ${S.trBars} mesures`);
+    if (S.gapOn) parts.push(`Silence : ${S.gapPlay} jouée(s) / ${S.gapMute} muette(s)`);
+    if (running && (S.trOn || S.gapOn)) parts.push(`Mesure ${bar + 1}`);
+    $('#status').textContent = parts.join(' · ');
+  }
+
+  // tuner
+  function renderStrings() {
+    const box = $('#strings');
+    STRINGS.forEach((s, i) => {
+      const b = document.createElement('button');
+      b.className = 'string'; b.setAttribute('aria-pressed', 'false');
+      b.innerHTML = `<b>${s.n}</b><span>${s.f.toFixed(1)}</span>`;
+      b.onclick = () => {
+        ensureAudio();
+        const was = b.getAttribute('aria-pressed') === 'true';
+        stopTone();
+        if (!was) {
+          const o = ctx.createOscillator(); o.type = 'sawtooth'; o.frequency.value = s.f;
+          const lp = ctx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 2200;
+          const g = ctx.createGain(); g.gain.setValueAtTime(0.0001, ctx.currentTime);
+          g.gain.exponentialRampToValueAtTime(0.3, ctx.currentTime + 0.05);
+          o.connect(lp); lp.connect(g); g.connect(master); o.start();
+          toneNode = { o, g }; b.setAttribute('aria-pressed', 'true');
+        }
+      };
+      box.appendChild(b);
+    });
+  }
+  function stopTone() {
+    if (toneNode) {
+      const { o, g } = toneNode, t = ctx.currentTime;
+      g.gain.cancelScheduledValues(t); g.gain.setValueAtTime(g.gain.value, t);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + 0.08); o.stop(t + 0.1); toneNode = null;
+    }
+    document.querySelectorAll('.string').forEach(x => x.setAttribute('aria-pressed', 'false'));
+  }
+
+  // presets
+  function renderPresets() {
+    const box = $('#presets'); box.innerHTML = '';
+    if (!S.presets.length) { box.innerHTML = '<p class="note">Aucun preset. Règle ton tempo puis enregistre-le.</p>'; return; }
+    S.presets.forEach((p, i) => {
+      const row = document.createElement('div'); row.className = 'preset';
+      const sub = SUBS.find(s => s.id === p.sub)?.name || '';
+      row.innerHTML = `<button class="load"></button><button class="del" aria-label="Supprimer">×</button>`;
+      const load = row.querySelector('.load');
+      load.textContent = p.name;
+      const sm = document.createElement('small'); sm.textContent = `${p.bpm} BPM · ${p.meter} · ${sub}`; load.appendChild(sm);
+      load.onclick = () => {
+        Object.assign(S, { bpm: p.bpm, meter: p.meter, sub: p.sub, sound: p.sound || S.sound, pattern: p.pattern ? [...p.pattern] : defaultPattern(p.meter) });
+        beatIdx = 0; save(); renderAll();
+      };
+      row.querySelector('.del').onclick = () => { S.presets.splice(i, 1); save(); renderPresets(); };
+      box.appendChild(row);
+    });
+  }
+  $('#saveForm').addEventListener('submit', e => {
+    e.preventDefault();
+    const name = $('#presetName').value.trim() || `${S.bpm} BPM · ${S.meter}`;
+    S.presets.unshift({ name, bpm: S.bpm, meter: S.meter, sub: S.sub, sound: S.sound, pattern: [...S.pattern] });
+    $('#presetName').value = ''; $('#presetName').blur(); save(); renderPresets();
+  });
+
+  // tap tempo
+  let taps = [];
+  $('#tap').addEventListener('pointerdown', e => {
+    e.preventDefault();
+    const now = performance.now();
+    if (taps.length && now - taps[taps.length - 1] > 2000) taps = [];
+    taps.push(now); taps = taps.slice(-5);
+    if (taps.length >= 2) {
+      const iv = (taps[taps.length - 1] - taps[0]) / (taps.length - 1);
+      setBpm(60000 / iv);
+    }
+    const t = $('#tap'); t.classList.add('hit'); setTimeout(() => t.classList.remove('hit'), 80);
+  });
+
+  $('#play').onclick = () => running ? stop() : start();
+  holdRepeat($('#minus'), () => setBpm(S.bpm - 1));
+  holdRepeat($('#plus'), () => setBpm(S.bpm + 1));
+  $('#slider').addEventListener('input', e => setBpm(+e.target.value));
+  $('#vol').addEventListener('input', e => { S.vol = +e.target.value; if (master) master.gain.value = S.vol / 100; save(); });
+  $('#subvol').addEventListener('input', e => { S.subVol = +e.target.value; save(); });
+  $('#trOn').addEventListener('change', e => { S.trOn = e.target.checked; save(); updateStatus(); });
+  $('#gapOn').addEventListener('change', e => { S.gapOn = e.target.checked; save(); updateStatus(); });
+
+  document.querySelectorAll('.tabs button').forEach(b => b.onclick = () => {
+    document.querySelectorAll('.tabs button').forEach(x => x.setAttribute('aria-selected', x === b));
+    document.querySelectorAll('[data-panel]').forEach(p => p.hidden = p.dataset.panel !== b.dataset.tab);
+    if (b.dataset.tab !== 'accord' && ctx) stopTone();
+  });
+
+  document.addEventListener('keydown', e => {
+    if (e.target.tagName === 'INPUT') return;
+    if (e.code === 'Space') { e.preventDefault(); running ? stop() : start(); }
+    if (e.key === 'ArrowUp' || e.key === 'ArrowRight') setBpm(S.bpm + (e.shiftKey ? 5 : 1));
+    if (e.key === 'ArrowDown' || e.key === 'ArrowLeft') setBpm(S.bpm - (e.shiftKey ? 5 : 1));
+  });
+
+  renderStrings();
+  renderAll();
+
+  if ('serviceWorker' in navigator && document.querySelector('link[rel=manifest]')) {
+    navigator.serviceWorker.register('sw.js').catch(() => {});
+  }
+})();
+</script>
+
+</body>
+</html>
