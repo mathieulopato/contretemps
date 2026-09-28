@@ -1,4 +1,4 @@
-const CACHE = 'contretemps-v7';
+const CACHE = 'contretemps-v8';
 const SHELL = ['./', 'index.html', 'manifest.webmanifest', 'icon-180.png', 'icon-512.png'];
 
 // cache: 'reload' skips the browser's HTTP cache, so a new version never stores stale files

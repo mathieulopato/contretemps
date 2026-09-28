@@ -177,6 +177,8 @@
   #tuneFreq { font-size: 20px; font-variant-numeric: tabular-nums; }
   .advice { font-size: 17px; font-style: italic; color: var(--dim); min-height: 1.3em; }
   .advice.ok { color: #F5B83D; }
+  .advice.tuned { color: #5fce4f; font-style: normal; }
+  #tuneFreq.held { color: var(--dim); }
   .mic {
     height: 60px; border: 1px solid #45423c; border-radius: 12px; cursor: pointer;
     background: #2b2a27; color: #EFE8AE; font: 400 19px/1 Georgia, "Times New Roman", serif; letter-spacing: .02em;
@@ -292,7 +294,7 @@
       <text x="34" y="76" font-family="Georgia,serif" font-size="22" fill="#2c2c2a">−</text>
       <text x="318" y="76" font-family="Georgia,serif" font-size="22" fill="#B8261C">+</text>
       <circle id="vuLamp" cx="42" cy="216" r="7" fill="#5c4d1e" stroke="#2c2c2a"/>
-      <text x="56" y="221" font-family="Georgia,serif" font-size="14" fill="#2c2c2a">juste</text>
+      <text id="vuLampLabel" x="56" y="221" font-family="Georgia,serif" font-size="14" fill="#2c2c2a">juste</text>
       <text id="vuNote" x="326" y="222" text-anchor="end" font-family="Georgia,serif" font-size="22" fill="#2c2c2a">–</text>
       <path d="M104 244 Q104 192 180 190 Q256 192 256 244 Z" fill="#1d1c1a"/>
       <g clip-path="url(#vuFace)"><g id="vuNeedle">
@@ -728,32 +730,59 @@
 
     const needle = $('#vuNeedle'), lamp = $('#vuLamp'), note = $('#vuNote');
     const freqEl = $('#tuneFreq'), advice = $('#tuneAdvice');
-    let target = -55, ang = -55, vel = 0, lastSignal = -Infinity, idle = true;
+    const lampLabel = $('#vuLampLabel');
+    const LAMP_OFF = '#5c4d1e', LAMP_NEAR = '#F5B83D', LAMP_OK = '#5fce4f';
+    const HOLD_AFTER = 250, REST_AFTER = 4000, NEAR = 5, TUNED = 3, TUNED_FOR = 1000;
+    let target = -55, ang = -55, vel = 0, lastSignal = -Infinity, idle = true, held = false;
+    let lastLabel = '', stableSince = null, tuned = false;
     const fmtCents = c => (c < 0 ? '−' : c > 0 ? '+' : '') + Math.abs(Math.round(c));
 
-    // called by the pitch source (demo slider now, microphone later)
+    function setHeld(on) {
+      held = on;
+      note.setAttribute('fill', on ? '#9c998f' : INK);
+      freqEl.classList.toggle('held', on);
+    }
+
+    // called by the pitch source with the live deviation
     function feed(cents, label, freq) {
+      const now = performance.now();
       target = clamp(cents, -50, 50);
-      lastSignal = performance.now();
-      idle = false;
-      const ok = Math.abs(cents) <= 5;
-      lamp.setAttribute('fill', ok ? '#F5B83D' : '#5c4d1e');
+      lastSignal = now; idle = false;
+      if (held) setHeld(false);
+
+      // validation: within ±3 cents for 1 s on the same note
+      if (label !== lastLabel) { stableSince = null; tuned = false; lastLabel = label; }
+      if (Math.abs(cents) <= TUNED) {
+        if (stableSince === null) stableSince = now;
+        if (now - stableSince >= TUNED_FOR) tuned = true;
+      } else { stableSince = null; tuned = false; }
+
+      const near = Math.abs(cents) <= NEAR;
+      lamp.setAttribute('fill', tuned ? LAMP_OK : near ? LAMP_NEAR : LAMP_OFF);
+      lampLabel.textContent = tuned ? 'accordé' : 'juste';
       note.textContent = label;
       freqEl.textContent = `${freq.toFixed(1).replace('.', ',')} Hz · ${fmtCents(cents)} cents`;
-      advice.textContent = ok ? 'Juste' : cents < 0 ? 'Serre la corde' : 'Détends la corde';
-      advice.classList.toggle('ok', ok);
+      advice.textContent = tuned ? 'Accordé' : near ? 'Juste' : cents < 0 ? 'Serre la corde' : 'Détends la corde';
+      advice.classList.toggle('ok', near && !tuned);
+      advice.classList.toggle('tuned', tuned);
     }
     function rest() {
-      target = -55; idle = true;
-      lamp.setAttribute('fill', '#5c4d1e');
+      target = -55; idle = true; setHeld(false);
+      lastLabel = ''; stableSince = null; tuned = false;
+      lamp.setAttribute('fill', LAMP_OFF); lampLabel.textContent = 'juste';
       note.textContent = '–'; freqEl.textContent = '–';
-      advice.textContent = 'Joue une corde'; advice.classList.remove('ok');
+      advice.textContent = 'Joue une corde'; advice.classList.remove('ok', 'tuned');
     }
 
     const hooks = [];
     function frame(now) {
       hooks.forEach(h => h(now));
-      if (!idle && now - lastSignal > 700) rest();
+      // sound faded: freeze the needle on the last reading, drop to the stop only after 4 s of silence
+      if (!idle) {
+        const quiet = now - lastSignal;
+        if (quiet > REST_AFTER) rest();
+        else if (quiet > HOLD_AFTER && !held) { setHeld(true); stableSince = null; advice.textContent = tuned ? 'Accordé' : 'Rejoue la corde'; }
+      }
       vel += (target - ang) * 0.06; vel *= 0.78; ang += vel;
       needle.setAttribute('transform', `rotate(${clamp(ang, -56, 56) / 50 * MAX} ${CX} ${CY})`);
       requestAnimationFrame(frame);
@@ -771,7 +800,7 @@
     const n = buf.length;
     let rms = 0;
     for (let i = 0; i < n; i++) rms += buf[i] * buf[i];
-    if (Math.sqrt(rms / n) < 0.008) return -1;
+    if (Math.sqrt(rms / n) < 0.003) return -1; // low gate: keep tracking while the string rings out
     const minLag = Math.floor(sr / 1100), maxLag = Math.min(Math.floor(sr / 65), n >> 1);
     const W = n - maxLag;
     if (!yinD || yinD.length !== maxLag + 1) yinD = new Float32Array(maxLag + 1);
