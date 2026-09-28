@@ -34,6 +34,7 @@
     --display: "Big Shoulders Display", "Arial Narrow", Impact, sans-serif;
     --ui: "IBM Plex Sans Condensed", "Arial Narrow", system-ui, sans-serif;
   }
+  [hidden] { display: none !important; }
   html, body { height: 100%; }
   body {
     background: var(--tolex);
@@ -160,6 +161,30 @@
   .save button { border: 0; background: var(--panel-2); color: var(--cream); border-radius: 10px; padding: 0 16px; font: 600 14px var(--ui); cursor: pointer; }
   button:focus-visible, input:focus-visible { outline: 2px solid var(--amber); outline-offset: 2px; }
   @media (prefers-reduced-motion: reduce) { .pendulum { transition: none !important; } }
+
+  /* Mode switch */
+  .modes { display: grid; grid-template-columns: 1fr 1fr; background: #2b2a27; padding: 4px; border-radius: 12px; gap: 4px; }
+  .modes button {
+    border: 0; background: transparent; color: var(--dim); padding: 11px 4px; border-radius: 9px; cursor: pointer;
+    font: 400 17px/1 Georgia, "Times New Roman", serif; letter-spacing: .02em;
+  }
+  .modes button[aria-selected="true"] { background: #EFE8AE; color: #2c2c2a; }
+  .mode { display: flex; flex-direction: column; gap: 16px; }
+
+  /* Tuner (dial keeps fixed physical colours) */
+  .vu { width: 100%; max-width: 360px; height: auto; display: block; margin: 0 auto; }
+  .readout { text-align: center; font-family: Georgia, "Times New Roman", serif; display: flex; flex-direction: column; gap: 4px; }
+  #tuneFreq { font-size: 20px; font-variant-numeric: tabular-nums; }
+  .advice { font-size: 17px; font-style: italic; color: var(--dim); min-height: 1.3em; }
+  .advice.ok { color: #F5B83D; }
+  .mic {
+    height: 60px; border: 1px solid #45423c; border-radius: 12px; cursor: pointer;
+    background: #2b2a27; color: #EFE8AE; font: 400 19px/1 Georgia, "Times New Roman", serif; letter-spacing: .02em;
+    display: flex; align-items: center; justify-content: center; gap: 12px;
+  }
+  .mic::before { content: ""; width: 10px; height: 10px; border-radius: 50%; background: #5c4d1e; }
+  .mic.on::before { background: #F5B83D; box-shadow: 0 0 10px #F5B83D; }
+  .mic-msg { text-align: center; margin-top: -6px; }
 </style>
 
 <div class="app">
@@ -167,6 +192,13 @@
     <h1>Contre<span>temps</span></h1>
     <div class="meta" id="meta">4/4 · noires</div>
   </header>
+
+  <nav class="modes" role="tablist" aria-label="Mode">
+    <button role="tab" data-mode="metro" aria-selected="true">Métronome</button>
+    <button role="tab" data-mode="tuner" aria-selected="false">Accordeur</button>
+  </nav>
+
+  <div class="mode" id="modeMetro">
 
   <div class="beats" id="beats" aria-label="Temps de la mesure"></div>
   <div class="hint">Touche un temps pour changer son accent : fort, moyen, normal, muet.</div>
@@ -248,6 +280,43 @@
     </form>
     <div class="presets" id="presets"></div>
   </section>
+  </div>
+
+  <div class="mode" id="modeTuner" hidden>
+    <svg class="vu" viewBox="0 0 360 272" role="img" aria-label="Cadran de l'accordeur">
+      <defs><clipPath id="vuFace"><rect x="12" y="12" width="336" height="232" rx="10"/></clipPath></defs>
+      <rect width="360" height="272" rx="18" fill="#2b2a27"/>
+      <rect x="12" y="12" width="336" height="232" rx="10" fill="#EFE8AE"/>
+      <g id="vuScale"></g>
+      <text x="180" y="158" text-anchor="middle" font-family="Georgia,serif" font-size="30" fill="#2c2c2a" letter-spacing="2">cents</text>
+      <text x="34" y="76" font-family="Georgia,serif" font-size="22" fill="#2c2c2a">−</text>
+      <text x="318" y="76" font-family="Georgia,serif" font-size="22" fill="#B8261C">+</text>
+      <circle id="vuLamp" cx="42" cy="216" r="7" fill="#5c4d1e" stroke="#2c2c2a"/>
+      <text x="56" y="221" font-family="Georgia,serif" font-size="14" fill="#2c2c2a">juste</text>
+      <text id="vuNote" x="326" y="222" text-anchor="end" font-family="Georgia,serif" font-size="22" fill="#2c2c2a">–</text>
+      <path d="M104 244 Q104 192 180 190 Q256 192 256 244 Z" fill="#1d1c1a"/>
+      <g clip-path="url(#vuFace)"><g id="vuNeedle">
+        <line x1="180" y1="228" x2="180" y2="44" stroke="#6e1c12" stroke-width="2"/>
+        <line x1="180" y1="228" x2="180" y2="190" stroke="#8c2a1c" stroke-width="6" stroke-linecap="round"/>
+      </g></g>
+      <rect x="140" y="232" width="80" height="16" rx="3" fill="#bdb9ae"/>
+      <circle cx="180" cy="228" r="11" fill="#d8d4c8" stroke="#8a877e" stroke-width="1.5"/>
+      <circle cx="180" cy="228" r="3" fill="#8a877e"/>
+      <circle cx="112" cy="258" r="6" fill="#9c998f"/><circle cx="248" cy="258" r="6" fill="#9c998f"/>
+    </svg>
+
+    <div class="readout">
+      <div id="tuneFreq">–</div>
+      <div class="advice" id="tuneAdvice">Joue une corde</div>
+    </div>
+
+    <button class="mic" id="micBtn">Activer le micro</button>
+    <p class="note mic-msg" id="micMsg" hidden></p>
+
+    <div class="card">
+      <div class="row"><span>Diapason · La =</span><div class="num" data-k="a4"></div><span>Hz</span></div>
+    </div>
+  </div>
 </div>
 
 <script>
@@ -299,10 +368,10 @@
   const S = {
     bpm: 100, meter: '4/4', pattern: defaultPattern('4/4'), sub: '1', sound: 'click', vol: 80, subVol: 55,
     trOn: false, trStart: 80, trTarget: 120, trStep: 5, trBars: 4,
-    gapOn: false, gapPlay: 3, gapMute: 1,
+    gapOn: false, gapPlay: 3, gapMute: 1, a4: 440,
     presets: EXAMPLES,
   };
-  const LIMITS = { trStart: [30, 300, 1], trTarget: [30, 300, 1], trStep: [1, 20, 1], trBars: [1, 32, 1], gapPlay: [1, 16, 1], gapMute: [1, 16, 1] };
+  const LIMITS = { trStart: [30, 300, 1], trTarget: [30, 300, 1], trStep: [1, 20, 1], trBars: [1, 32, 1], gapPlay: [1, 16, 1], gapMute: [1, 16, 1], a4: [430, 450, 1] };
 
   try { Object.assign(S, JSON.parse(localStorage.getItem('contretemps') || '{}')); } catch (e) {}
   const save = () => { try { localStorage.setItem('contretemps', JSON.stringify(S)); } catch (e) {} };
@@ -624,14 +693,170 @@
   });
 
   document.addEventListener('keydown', e => {
-    if (e.target.tagName === 'INPUT') return;
+    if (e.target.tagName === 'INPUT' || S.mode === 'tuner') return;
     if (e.code === 'Space') { e.preventDefault(); running ? stop() : start(); }
     if (e.key === 'ArrowUp' || e.key === 'ArrowRight') setBpm(S.bpm + (e.shiftKey ? 5 : 1));
     if (e.key === 'ArrowDown' || e.key === 'ArrowLeft') setBpm(S.bpm - (e.shiftKey ? 5 : 1));
   });
 
+  // ---------- Tuner dial ----------
+  const tuner = (() => {
+    const NS = 'http://www.w3.org/2000/svg', CX = 180, CY = 228, MAX = 48;
+    const RED = '#B8261C', INK = '#2c2c2a';
+    const mk = (t, a, p) => { const e = document.createElementNS(NS, t); for (const k in a) e.setAttribute(k, a[k]); p.appendChild(e); return e; };
+    const pt = (c, r) => { const a = (c / 50 * MAX) * Math.PI / 180; return [CX + r * Math.sin(a), CY - r * Math.cos(a)]; };
+
+    const g = $('#vuScale');
+    const [a1, a2] = [pt(-50, 172), pt(50, 172)];
+    mk('path', { d: `M${a1} A172 172 0 0 1 ${a2}`, fill: 'none', stroke: INK, 'stroke-width': 1.5 }, g);
+    [[-50, -30], [30, 50]].forEach(([s, e]) => {
+      const p = pt(s, 178), q = pt(e, 178);
+      mk('path', { d: `M${p} A178 178 0 0 1 ${q}`, fill: 'none', stroke: RED, 'stroke-width': 9 }, g);
+    });
+    for (let c = -50; c <= 50; c += 5) {
+      const maj = c % 10 === 0, col = Math.abs(c) >= 30 ? RED : INK;
+      const p = pt(c, 172), q = pt(c, maj ? 158 : 164);
+      mk('line', { x1: p[0], y1: p[1], x2: q[0], y2: q[1], stroke: col, 'stroke-width': maj ? 2 : 1.2 }, g);
+      if (maj) {
+        const l = pt(c, 196);
+        mk('text', { x: l[0], y: l[1] + 7, 'text-anchor': 'middle', 'font-family': 'Georgia,serif', 'font-size': c === 0 ? 22 : 18, fill: col }, g).textContent = Math.abs(c);
+      } else {
+        const d = pt(c, 150);
+        mk('circle', { cx: d[0], cy: d[1], r: 1.8, fill: INK }, g);
+      }
+    }
+
+    const needle = $('#vuNeedle'), lamp = $('#vuLamp'), note = $('#vuNote');
+    const freqEl = $('#tuneFreq'), advice = $('#tuneAdvice');
+    let target = -55, ang = -55, vel = 0, lastSignal = -Infinity, idle = true;
+    const fmtCents = c => (c < 0 ? '−' : c > 0 ? '+' : '') + Math.abs(Math.round(c));
+
+    // called by the pitch source (demo slider now, microphone later)
+    function feed(cents, label, freq) {
+      target = clamp(cents, -50, 50);
+      lastSignal = performance.now();
+      idle = false;
+      const ok = Math.abs(cents) <= 5;
+      lamp.setAttribute('fill', ok ? '#F5B83D' : '#5c4d1e');
+      note.textContent = label;
+      freqEl.textContent = `${freq.toFixed(1).replace('.', ',')} Hz · ${fmtCents(cents)} cents`;
+      advice.textContent = ok ? 'Juste' : cents < 0 ? 'Serre la corde' : 'Détends la corde';
+      advice.classList.toggle('ok', ok);
+    }
+    function rest() {
+      target = -55; idle = true;
+      lamp.setAttribute('fill', '#5c4d1e');
+      note.textContent = '–'; freqEl.textContent = '–';
+      advice.textContent = 'Joue une corde'; advice.classList.remove('ok');
+    }
+
+    const hooks = [];
+    function frame(now) {
+      hooks.forEach(h => h(now));
+      if (!idle && now - lastSignal > 700) rest();
+      vel += (target - ang) * 0.06; vel *= 0.78; ang += vel;
+      needle.setAttribute('transform', `rotate(${clamp(ang, -56, 56) / 50 * MAX} ${CX} ${CY})`);
+      requestAnimationFrame(frame);
+    }
+    requestAnimationFrame(frame);
+    return { feed, onFrame: h => hooks.push(h) };
+  })();
+
+  // ---------- Pitch detection (microphone) ----------
+  const NOTE_NAMES = ['Do', 'Do♯', 'Ré', 'Ré♯', 'Mi', 'Fa', 'Fa♯', 'Sol', 'Sol♯', 'La', 'La♯', 'Si'];
+
+  // YIN: cumulative mean normalized difference, first dip under threshold, parabolic refinement
+  let yinD = null;
+  function detectPitch(buf, sr) {
+    const n = buf.length;
+    let rms = 0;
+    for (let i = 0; i < n; i++) rms += buf[i] * buf[i];
+    if (Math.sqrt(rms / n) < 0.008) return -1;
+    const minLag = Math.floor(sr / 1100), maxLag = Math.min(Math.floor(sr / 65), n >> 1);
+    const W = n - maxLag;
+    if (!yinD || yinD.length !== maxLag + 1) yinD = new Float32Array(maxLag + 1);
+    const d = yinD;
+    d[0] = 1;
+    let sum = 0;
+    for (let tau = 1; tau <= maxLag; tau++) {
+      let s = 0;
+      for (let i = 0; i < W; i++) { const x = buf[i] - buf[i + tau]; s += x * x; }
+      sum += s;
+      d[tau] = sum ? s * tau / sum : 1;
+    }
+    let tau = -1;
+    for (let t = minLag; t < maxLag; t++) {
+      if (d[t] < 0.12) { while (t + 1 < maxLag && d[t + 1] < d[t]) t++; tau = t; break; }
+    }
+    if (tau < 0) return -1;
+    const a = d[tau - 1], b = d[tau], c = d[tau + 1] ?? b;
+    const shift = (a - c) / (2 * (a - 2 * b + c) || 1);
+    return sr / (tau + (Math.abs(shift) < 1 ? shift : 0));
+  }
+
+  const mic = { stream: null, analyser: null, buf: null, recent: [], frame: 0 };
+
+  async function startMic() {
+    const msg = $('#micMsg');
+    msg.hidden = true;
+    ensureAudio(); // inside the tap, before the await, so iOS lets audio start
+    if (!navigator.mediaDevices?.getUserMedia) {
+      msg.textContent = 'Le micro n\'est pas disponible ici. Ouvre la version installée sur ton iPhone.';
+      msg.hidden = false; return;
+    }
+    try { if (navigator.audioSession) navigator.audioSession.type = 'play-and-record'; } catch (e) {}
+    try {
+      mic.stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false } });
+    } catch (e) {
+      try { if (navigator.audioSession) navigator.audioSession.type = 'playback'; } catch (_) {}
+      msg.textContent = e && e.name === 'NotAllowedError'
+        ? 'Micro refusé. Autorise-le dans Réglages › Safari › Micro, puis réessaie.'
+        : 'Le micro est bloqué sur cette page. Ouvre la version installée sur ton iPhone.';
+      msg.hidden = false; return;
+    }
+    const src = ctx.createMediaStreamSource(mic.stream);
+    mic.analyser = ctx.createAnalyser();
+    mic.analyser.fftSize = 4096;
+    mic.buf = new Float32Array(mic.analyser.fftSize);
+    src.connect(mic.analyser);
+    mic.recent = [];
+    $('#micBtn').textContent = 'Couper le micro'; $('#micBtn').classList.add('on');
+  }
+  function stopMic() {
+    if (mic.stream) mic.stream.getTracks().forEach(t => t.stop());
+    mic.stream = null; mic.analyser = null;
+    try { if (navigator.audioSession) navigator.audioSession.type = 'playback'; } catch (e) {}
+    $('#micBtn').textContent = 'Activer le micro'; $('#micBtn').classList.remove('on');
+  }
+  $('#micBtn').onclick = () => mic.stream ? stopMic() : startMic();
+
+  tuner.onFrame(() => {
+    if (!mic.analyser || (mic.frame++ & 1)) return; // analyse every other frame (~30 per second)
+    mic.analyser.getFloatTimeDomainData(mic.buf);
+    const f = detectPitch(mic.buf, ctx.sampleRate);
+    if (f < 0) { mic.recent = []; return; }
+    mic.recent.push(f); if (mic.recent.length > 5) mic.recent.shift();
+    const med = [...mic.recent].sort((x, y) => x - y)[mic.recent.length >> 1];
+    const midi = 69 + 12 * Math.log2(med / S.a4);
+    const n = Math.round(midi);
+    tuner.feed((midi - n) * 100, NOTE_NAMES[((n % 12) + 12) % 12] + (Math.floor(n / 12) - 1), med);
+  });
+
+  function setMode(m) {
+    S.mode = m; save();
+    document.querySelectorAll('.modes button').forEach(b => b.setAttribute('aria-selected', b.dataset.mode === m));
+    $('#modeMetro').hidden = m !== 'metro';
+    $('#modeTuner').hidden = m !== 'tuner';
+    $('#meta').hidden = m !== 'metro';
+    if (m === 'tuner' && running) stop();
+    if (m === 'tuner' && ctx) stopTone();
+    if (m !== 'tuner' && mic.stream) stopMic();
+  }
+  document.querySelectorAll('.modes button').forEach(b => b.onclick = () => setMode(b.dataset.mode));
+
   renderStrings();
   renderAll();
+  setMode(S.mode === 'tuner' ? 'tuner' : 'metro');
 
   if ('serviceWorker' in navigator && document.querySelector('link[rel=manifest]')) {
     navigator.serviceWorker.register('sw.js').catch(() => {});
