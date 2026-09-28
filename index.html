@@ -859,7 +859,15 @@
   setMode(S.mode === 'tuner' ? 'tuner' : 'metro');
 
   if ('serviceWorker' in navigator && document.querySelector('link[rel=manifest]')) {
-    navigator.serviceWorker.register('sw.js').catch(() => {});
+    // reload once when a new version takes over, so updates show without relaunching
+    const hadController = !!navigator.serviceWorker.controller;
+    let reloaded = false;
+    navigator.serviceWorker.addEventListener('controllerchange', () => {
+      if (hadController && !reloaded) { reloaded = true; location.reload(); }
+    });
+    navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' })
+      .then(reg => document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') reg.update(); }))
+      .catch(() => {});
   }
 })();
 </script>
