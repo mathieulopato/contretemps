@@ -54,40 +54,77 @@
   h1 span { color: var(--amber); }
   .meta { color: var(--dim); font-size: 13px; letter-spacing: .04em; font-variant-numeric: tabular-nums; }
 
-  /* Beat cells */
-  .beats { display: flex; gap: 5px; height: 64px; align-items: flex-end; }
-  .cell {
-    flex: 1; min-width: 0; border: 0; padding: 0; cursor: pointer;
-    background: var(--panel-2); border-radius: 4px;
-    position: relative; height: 100%;
-    display: flex; align-items: flex-end;
+
+  .hint { color: var(--dim); font-size: 12px; margin: -2px 0 0; text-align: center; }
+
+  /* Lamp panel: fixed physical colours, like the dials */
+  .lampbox { background: #2b2a27; border-radius: 18px; padding: 12px; position: relative; }
+  .lampbox::before, .lampbox::after {
+    content: ""; position: absolute; bottom: 3px; width: 7px; height: 7px; border-radius: 50%; background: #9c998f;
   }
-  .cell i { display: block; width: 100%; border-radius: 4px; background: var(--line); transition: background .06s; }
-  .cell[data-l="3"] i { height: 100%; }
-  .cell[data-l="2"] i { height: 72%; }
-  .cell[data-l="1"] i { height: 44%; }
-  .cell[data-l="0"] i { height: 8%; background: transparent; outline: 1px dashed var(--line); outline-offset: -1px; }
-  .cell.group::before { content: ""; position: absolute; left: -3px; top: 6px; bottom: 6px; width: 1px; background: var(--dim); opacity: .5; }
-  .cell.on i { background: var(--amber); }
-  .cell.on[data-l="3"] i { background: var(--amber-hi); }
-  .beats.silent .cell.on i { background: var(--dim); }
-  .hint { color: var(--dim); font-size: 12px; margin-top: -8px; }
+  .lampbox::before { left: 30%; } .lampbox::after { right: 30%; }
+  .plate {
+    border-radius: 10px; padding: 14px 14px 12px; display: flex; flex-direction: column; gap: 14px;
+    background: #EFE8AE;
+  }
+  .lamps { display: flex; flex-direction: column; gap: 12px; }
+  .lamp-row { display: flex; justify-content: center; gap: 10px; }
+  .lamp {
+    --c: #f2c230; --glow: rgba(242,194,48,.75);
+    flex: 0 1 68px; min-width: 0; border: 0; padding: 0; background: none; cursor: pointer;
+    display: flex; flex-direction: column; align-items: center; gap: 5px; position: relative;
+  }
+  .lamp.group-start { margin-left: 12px; }
+  .lamp[data-l="3"] { --c: #d8322a; --glow: rgba(235,60,40,.8); }
+  .lamp[data-l="2"] { --c: #f0892a; --glow: rgba(245,140,40,.8); }
+  .lamp[data-l="0"] { --c: #d9dcd6; --glow: rgba(255,255,255,.35); }
+  .eng { font: 700 11px/1 "IBM Plex Sans Condensed", "Arial Narrow", sans-serif; letter-spacing: .12em; color: #2c2c2a; }
+  .bezel {
+    width: 100%; aspect-ratio: 1 / 1.08; border-radius: 9px; padding: 5px;
+    background: linear-gradient(145deg, #f4f4f1, #8f908c 45%, #e3e3df 60%, #6e6f6b);
+    box-shadow: 0 2px 3px rgba(0,0,0,.45);
+  }
+  .lens {
+    display: block; width: 100%; height: 100%; border-radius: 5px; position: relative; overflow: hidden;
+    background:
+      repeating-linear-gradient(90deg, rgba(255,255,255,.14) 0 2px, rgba(0,0,0,.12) 2px 5px),
+      var(--c);
+    filter: brightness(.42) saturate(.75);
+    box-shadow: inset 0 0 0 1px rgba(0,0,0,.35), inset 0 -6px 10px rgba(0,0,0,.35);
+    transition: filter .12s ease-out, box-shadow .12s ease-out;
+  }
+  .lens::after {
+    content: ""; position: absolute; inset: 0; opacity: 0; transition: opacity .12s ease-out;
+    background: radial-gradient(circle at 50% 42%, rgba(255,255,240,.95) 0 6%, rgba(255,250,220,.45) 18%, transparent 55%);
+  }
+  .lamp.on .lens { filter: brightness(1.12) saturate(1.1); box-shadow: inset 0 0 0 1px rgba(0,0,0,.2), 0 0 16px 3px var(--glow); }
+  .lamp.on .lens::after { opacity: 1; }
+  .lamp::after {
+    content: ""; position: absolute; left: -10%; right: -10%; bottom: -14px; height: 22px; pointer-events: none;
+    background: radial-gradient(ellipse at 50% 0, var(--glow), transparent 70%); opacity: 0; transition: opacity .12s ease-out;
+  }
+  .lamp.on::after { opacity: .7; }
+  .lamp[data-l="0"].on .lens { filter: brightness(.9); box-shadow: inset 0 0 0 1px rgba(0,0,0,.2); }
+  .lamp[data-l="0"].on::after { opacity: .25; }
+  .lamps.silent .lamp.on .lens { filter: brightness(.7) saturate(.2); box-shadow: inset 0 0 0 1px rgba(0,0,0,.3); }
+  .lamps.silent .lamp.on::after { opacity: 0; }
+  .lamp:focus-visible .bezel { outline: 2px solid #F5B83D; outline-offset: 2px; }
+  .strip {
+    border-top: 1.5px solid #2c2c2a; padding: 10px 4px 0; color: #2c2c2a;
+    display: flex; align-items: baseline; gap: 8px; font-family: Georgia, "Times New Roman", serif;
+  }
+  .bpm-num { font-size: 46px; line-height: 1; font-variant-numeric: tabular-nums; }
+  .bpm-unit { font-size: 15px; letter-spacing: .06em; }
+  .strip-right { margin-left: auto; display: flex; flex-direction: column; align-items: flex-end; gap: 2px; font-size: 15px; }
+  .strip-right em { font-size: 17px; }
+  @media (prefers-reduced-motion: reduce) { .lens, .lens::after, .lamp::after { transition: none; } }
 
   /* Tempo block */
-  .tempo {
-    background: var(--panel); border-radius: 14px; padding: 14px 12px 16px;
-    display: grid; grid-template-columns: 64px 1fr 64px; align-items: center; gap: 8px;
-    position: relative; overflow: hidden;
-  }
-  .tempo.flash { box-shadow: inset 0 0 0 2px var(--amber); }
-  .pendulum { position: absolute; left: 50%; bottom: -8px; width: 2px; height: 150%; transform-origin: 50% 100%;
-    background: linear-gradient(to top, transparent, rgba(240,123,22,.16) 30%, rgba(240,123,22,.16)); transform: rotate(0deg); pointer-events: none; }
-  .bpm { text-align: center; position: relative; }
-  .bpm output { display: block; font: 800 96px/0.9 var(--display); font-variant-numeric: tabular-nums; letter-spacing: -.01em; }
-  .bpm small { display: block; margin-top: 6px; color: var(--dim); font-size: 12px; letter-spacing: .14em; text-transform: uppercase; }
-  .bpm small b { color: var(--amber); font-weight: 600; }
+  .tempo { display: flex; flex-direction: column; gap: 10px; }
+  .tempo-ctl { display: grid; grid-template-columns: 56px 1fr 56px; align-items: center; gap: 12px; }
+  .tempo-ctl input[type=range] { grid-column: auto; margin: 0; }
   .step {
-    height: 64px; border-radius: 50%; border: 1px solid var(--line); background: var(--panel-2);
+    height: 56px; border-radius: 50%; border: 1px solid var(--line); background: var(--panel-2);
     color: var(--cream); font: 500 34px/1 var(--display); cursor: pointer; position: relative;
   }
   .step:active { background: var(--line); }
@@ -107,7 +144,7 @@
   .tap:active, .tap.hit { background: var(--panel-2); border-color: var(--amber); }
 
   /* Tabs */
-  .tabs { display: grid; grid-template-columns: repeat(5, 1fr); gap: 4px; background: var(--panel); padding: 4px; border-radius: 12px; }
+  .tabs { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; background: var(--panel); padding: 4px; border-radius: 12px; }
   .tabs button {
     border: 0; background: transparent; color: var(--dim); padding: 9px 2px; border-radius: 9px; cursor: pointer;
     font: 600 12px/1 var(--ui); letter-spacing: .05em; text-transform: uppercase;
@@ -138,15 +175,6 @@
   .note { color: var(--dim); font-size: 13px; margin: 0; }
   .status { color: var(--sage); font-size: 13px; font-variant-numeric: tabular-nums; min-height: 1.2em; }
 
-  .strings { display: grid; grid-template-columns: repeat(6, 1fr); gap: 6px; }
-  .string {
-    border: 1px solid var(--line); background: var(--panel); color: var(--cream); border-radius: 12px;
-    padding: 12px 0 10px; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 4px;
-  }
-  .string b { font: 800 26px/1 var(--display); }
-  .string span { color: var(--dim); font-size: 11px; font-variant-numeric: tabular-nums; }
-  .string[aria-pressed="true"] { border-color: var(--sage); background: #22302c; }
-  .string[aria-pressed="true"] span { color: var(--sage); }
 
   .presets { display: flex; flex-direction: column; gap: 6px; }
   .preset { display: grid; grid-template-columns: 1fr auto; background: var(--panel); border-radius: 12px; overflow: hidden; }
@@ -160,7 +188,6 @@
   }
   .save button { border: 0; background: var(--panel-2); color: var(--cream); border-radius: 10px; padding: 0 16px; font: 600 14px var(--ui); cursor: pointer; }
   button:focus-visible, input:focus-visible { outline: 2px solid var(--amber); outline-offset: 2px; }
-  @media (prefers-reduced-motion: reduce) { .pendulum { transition: none !important; } }
 
   /* Mode switch */
   .modes { display: grid; grid-template-columns: 1fr 1fr; background: #2b2a27; padding: 4px; border-radius: 12px; gap: 4px; }
@@ -179,6 +206,15 @@
   .advice.ok { color: #F5B83D; }
   .advice.tuned { color: #5fce4f; font-style: normal; }
   #tuneFreq.held { color: var(--dim); }
+
+  /* Guitar neck */
+  .neck { width: 100%; max-width: 360px; height: auto; display: block; margin: 0 auto; -webkit-user-select: none; user-select: none; }
+  .neck .str { cursor: pointer; outline: none; }
+  .neck .str:focus-visible .hit { stroke: var(--amber); stroke-width: 1.5; }
+  .neck .snum { font: 400 17px Georgia, "Times New Roman", serif; fill: var(--cream); }
+  .neck .sname { font: 400 12px Georgia, "Times New Roman", serif; fill: var(--dim); }
+  .neck .str.lit .snum { fill: #F5B83D; }
+  .neck-hint { text-align: center; margin-top: -8px; }
   .mic {
     height: 60px; border: 1px solid #45423c; border-radius: 12px; cursor: pointer;
     background: #2b2a27; color: #EFE8AE; font: 400 19px/1 Georgia, "Times New Roman", serif; letter-spacing: .02em;
@@ -202,18 +238,23 @@
 
   <div class="mode" id="modeMetro">
 
-  <div class="beats" id="beats" aria-label="Temps de la mesure"></div>
-  <div class="hint">Touche un temps pour changer son accent : fort, moyen, normal, muet.</div>
-
   <section class="tempo" id="tempo">
-    <div class="pendulum" id="pendulum"></div>
-    <button class="step" id="minus" aria-label="Ralentir">−</button>
-    <div class="bpm">
-      <output id="bpm">100</output>
-      <small><b id="tname">Andante</b> · BPM</small>
+    <div class="lampbox">
+      <div class="plate">
+        <div class="lamps" id="beats" aria-label="Temps de la mesure"></div>
+        <div class="strip">
+          <span class="bpm-num" id="bpm">100</span>
+          <span class="bpm-unit">bpm</span>
+          <span class="strip-right"><em id="tname">Andante</em><span id="plateMeter">4/4</span></span>
+        </div>
+      </div>
     </div>
-    <button class="step" id="plus" aria-label="Accélérer">+</button>
-    <input type="range" id="slider" min="30" max="300" value="100" aria-label="Tempo">
+    <p class="hint">Touche un voyant pour changer son accent : rouge fort, orange moyen, jaune normal, clair muet.</p>
+    <div class="tempo-ctl">
+      <button class="step" id="minus" aria-label="Ralentir">−</button>
+      <input type="range" id="slider" min="30" max="300" value="100" aria-label="Tempo">
+      <button class="step" id="plus" aria-label="Accélérer">+</button>
+    </div>
   </section>
 
   <div class="transport">
@@ -225,7 +266,6 @@
     <button role="tab" data-tab="rythme" aria-selected="true">Rythme</button>
     <button role="tab" data-tab="son" aria-selected="false">Son</button>
     <button role="tab" data-tab="coach" aria-selected="false">Coach</button>
-    <button role="tab" data-tab="accord" aria-selected="false">Accord</button>
     <button role="tab" data-tab="presets" aria-selected="false">Presets</button>
   </nav>
 
@@ -269,11 +309,6 @@
     <div class="status" id="status"></div>
   </section>
 
-  <section class="panel" data-panel="accord" hidden>
-    <div class="label">Note de référence · accordage standard</div>
-    <div class="strings" id="strings"></div>
-    <p class="note">Touche une corde pour entendre la note en continu, touche-la encore pour couper. La = 440 Hz.</p>
-  </section>
 
   <section class="panel" data-panel="presets" hidden>
     <form class="save" id="saveForm">
@@ -315,6 +350,16 @@
     <button class="mic" id="micBtn">Activer le micro</button>
     <p class="note mic-msg" id="micMsg" hidden></p>
 
+    <svg class="neck" id="neck" viewBox="0 0 360 440" aria-label="Manche de guitare : touche une corde pour entendre sa note">
+      <defs>
+        <filter id="glow" x="-200%" y="-10%" width="500%" height="120%">
+          <feGaussianBlur stdDeviation="2.5" result="b"/>
+          <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+        </filter>
+      </defs>
+    </svg>
+    <p class="note neck-hint">Touche une corde pour entendre sa note, touche-la encore pour couper. Micro actif, la corde jouée s'allume toute seule.</p>
+
     <div class="card">
       <div class="row"><span>Diapason · La =</span><div class="num" data-k="a4"></div><span>Hz</span></div>
     </div>
@@ -350,10 +395,12 @@
     { id: 'wood', name: 'Bois' },
     { id: 'drum', name: 'Batterie' },
   ];
+  // standard tuning, low to high (82.41 / 110 / 146.83 / 196 / 246.94 / 329.63 Hz at La = 440)
   const STRINGS = [
-    { n: 'E', o: 2, f: 82.41 }, { n: 'A', o: 2, f: 110.00 }, { n: 'D', o: 3, f: 146.83 },
-    { n: 'G', o: 3, f: 196.00 }, { n: 'B', o: 3, f: 246.94 }, { n: 'e', o: 4, f: 329.63 },
+    { name: 'Mi2', midi: 40 }, { name: 'La2', midi: 45 }, { name: 'Ré3', midi: 50 },
+    { name: 'Sol3', midi: 55 }, { name: 'Si3', midi: 59 }, { name: 'Mi4', midi: 64 },
   ];
+  const stringFreq = s => S.a4 * Math.pow(2, (s.midi - 69) / 12);
   const EXAMPLES = [
     { name: 'Exemple · Blues shuffle', bpm: 84, meter: '4/4', sub: 'sw', sound: 'drum' },
     { name: 'Exemple · Galop metal', bpm: 150, meter: '4/4', sub: 'gal', sound: 'click' },
@@ -427,6 +474,14 @@
     const lp = ctx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 3000;
     s.connect(lp); lp.connect(env(t, .35, .015)); s.start(t); s.stop(t + 0.03);
   }
+  // snare: short drum-head tone + band-passed noise for the wires
+  function snare(t) {
+    tone(t, 'triangle', 240, 180, .45, .09);
+    const s = ctx.createBufferSource(); s.buffer = noise;
+    const bp = ctx.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = 3200; bp.Q.value = 0.7;
+    const hp = ctx.createBiquadFilter(); hp.type = 'highpass'; hp.frequency.value = 1200;
+    s.connect(bp); bp.connect(hp); hp.connect(env(t, .8, .17)); s.start(t); s.stop(t + 0.2);
+  }
   // kind: 3 downbeat, 2 accent, 1 beat, 's' subdivision
   function playClick(t, kind) {
     const sv = S.subVol / 100;
@@ -442,7 +497,7 @@
     } else {
       if (kind === 3) kick(t);
       else if (kind === 2) { tone(t, 'sine', 190, 170, .5, .1); hat(t, .5, .09); }
-      else if (kind === 1) hat(t, .55, .05);
+      else if (kind === 1) snare(t);
       else hat(t, .35 * sv, .03);
     }
   }
@@ -461,7 +516,7 @@
       if (!barSilent && lvl > 0) {
         SUBS.find(s => s.id === S.sub).offs.forEach((o, i) => playClick(nextBeat + o * spb, i === 0 ? lvl : 's'));
       }
-      queue.push({ t: nextBeat, beat: beatIdx, silent: barSilent, spb });
+      queue.push({ t: nextBeat, beat: beatIdx, lvl, silent: barSilent, spb });
       nextBeat += spb;
       beatIdx++;
       if (beatIdx >= S.pattern.length) { beatIdx = 0; endOfBar(); }
@@ -494,33 +549,21 @@
   function stop() {
     running = false; clearInterval(timer); queue.length = 0;
     $('#play').textContent = 'Jouer'; $('#play').classList.remove('running');
-    document.querySelectorAll('.cell.on').forEach(c => c.classList.remove('on'));
+    lampEls.forEach(l => l.classList.remove('on'));
     $('#beats').classList.remove('silent');
-    $('#pendulum').style.transition = 'transform .3s'; $('#pendulum').style.transform = 'rotate(0deg)';
     try { wakeLock && wakeLock.release(); } catch (e) {} wakeLock = null;
     updateStatus();
   }
 
   // visuals
-  let side = 1;
-  const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
   function draw() {
     if (running && ctx) {
       let ev = null;
       while (queue.length && queue[0].t <= ctx.currentTime) ev = queue.shift();
       if (ev) {
-        const cells = $('#beats').children;
-        for (const c of cells) c.classList.remove('on');
-        if (cells[ev.beat]) cells[ev.beat].classList.add('on');
+        lampEls.forEach(l => l.classList.remove('on'));
+        if (lampEls[ev.beat]) lampEls[ev.beat].classList.add('on');
         $('#beats').classList.toggle('silent', ev.silent);
-        const tempo = $('#tempo');
-        if (ev.beat === 0 && !ev.silent) { tempo.classList.add('flash'); setTimeout(() => tempo.classList.remove('flash'), 90); }
-        if (!reduced) {
-          side = -side;
-          const p = $('#pendulum');
-          p.style.transition = `transform ${ev.spb}s cubic-bezier(.45,0,.55,1)`;
-          p.style.transform = `rotate(${side * 22}deg)`;
-        }
       }
     }
     requestAnimationFrame(draw);
@@ -535,24 +578,38 @@
     S.bpm = clamp(Math.round(v), 30, 300);
     $('#bpm').textContent = S.bpm;
     $('#slider').value = S.bpm;
-    $('#tname').textContent = tempoName(S.bpm);
-    save();
+    $('#tname').textContent = tempoName(S.bpm);    save();
   }
 
+  // one lamp per beat; /8 meters go on two rows, split at a group boundary (6/8 = 3|3, 7/8 = 2+2|3, 12/8 = 3+3|3+3)
+  const ACCENTS = ['muet', 'normal', 'moyen', 'fort'];
+  let lampEls = [];
   function renderBeats() {
     const box = $('#beats'); box.innerHTML = '';
+    const groups = meterObj().groups, compound = groups[0] > 1;
     const starts = new Set(); let acc = 0;
-    meterObj().groups.forEach(g => { starts.add(acc); acc += g; });
+    groups.forEach(g => { starts.add(acc); acc += g; });
+    let breakAt = S.pattern.length;
+    if (compound) {
+      let best = Infinity; acc = 0;
+      groups.forEach(g => { acc += g; if (acc < S.pattern.length && Math.abs(acc - S.pattern.length / 2) < best) { best = Math.abs(acc - S.pattern.length / 2); breakAt = acc; } });
+    }
+    lampEls = [];
+    let row = null;
     S.pattern.forEach((l, i) => {
+      if (i === 0 || i === breakAt) { row = document.createElement('div'); row.className = 'lamp-row'; box.appendChild(row); }
       const b = document.createElement('button');
-      b.className = 'cell' + (i > 0 && starts.has(i) && meterObj().groups[0] > 1 ? ' group' : '');
-      b.dataset.l = l; b.setAttribute('aria-label', `Temps ${i + 1}`);
-      b.innerHTML = '<i></i>';
-      b.onclick = () => { S.pattern[i] = (S.pattern[i] + 3) % 4; b.dataset.l = S.pattern[i]; save(); };
-      box.appendChild(b);
+      b.className = 'lamp' + (compound && starts.has(i) && i !== 0 && i !== breakAt ? ' group-start' : '');
+      b.dataset.l = l;
+      b.innerHTML = `<span class="eng">${i + 1}</span><span class="bezel"><span class="lens"></span></span>`;
+      const label = () => b.setAttribute('aria-label', `Temps ${i + 1}, ${ACCENTS[S.pattern[i]]}`);
+      label();
+      b.onclick = () => { S.pattern[i] = (S.pattern[i] + 3) % 4; b.dataset.l = S.pattern[i]; label(); save(); };
+      row.appendChild(b); lampEls.push(b);
     });
     const unit = S.meter.endsWith('/8') ? 'croches' : 'noires';
     $('#meta').textContent = `${S.meter} · pulsation ${unit}`;
+    $('#plateMeter').textContent = S.meter;
   }
 
   function chips(el, items, key, label, onPick) {
@@ -607,28 +664,18 @@
     $('#status').textContent = parts.join(' · ');
   }
 
-  // tuner
-  function renderStrings() {
-    const box = $('#strings');
-    STRINGS.forEach((s, i) => {
-      const b = document.createElement('button');
-      b.className = 'string'; b.setAttribute('aria-pressed', 'false');
-      b.innerHTML = `<b>${s.n}</b><span>${s.f.toFixed(1)}</span>`;
-      b.onclick = () => {
-        ensureAudio();
-        const was = b.getAttribute('aria-pressed') === 'true';
-        stopTone();
-        if (!was) {
-          const o = ctx.createOscillator(); o.type = 'sawtooth'; o.frequency.value = s.f;
-          const lp = ctx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 2200;
-          const g = ctx.createGain(); g.gain.setValueAtTime(0.0001, ctx.currentTime);
-          g.gain.exponentialRampToValueAtTime(0.3, ctx.currentTime + 0.05);
-          o.connect(lp); lp.connect(g); g.connect(master); o.start();
-          toneNode = { o, g }; b.setAttribute('aria-pressed', 'true');
-        }
-      };
-      box.appendChild(b);
-    });
+  // reference tone for one string, held until stopped
+  let toneString = -1;
+  function playTone(i) {
+    ensureAudio();
+    stopTone();
+    const o = ctx.createOscillator(); o.type = 'sawtooth'; o.frequency.value = stringFreq(STRINGS[i]);
+    const lp = ctx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 2200;
+    const g = ctx.createGain(); g.gain.setValueAtTime(0.0001, ctx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.3, ctx.currentTime + 0.05);
+    o.connect(lp); lp.connect(g); g.connect(master); o.start();
+    toneNode = { o, g }; toneString = i;
+    neck.refresh();
   }
   function stopTone() {
     if (toneNode) {
@@ -636,8 +683,82 @@
       g.gain.cancelScheduledValues(t); g.gain.setValueAtTime(g.gain.value, t);
       g.gain.exponentialRampToValueAtTime(0.0001, t + 0.08); o.stop(t + 0.1); toneNode = null;
     }
-    document.querySelectorAll('.string').forEach(x => x.setAttribute('aria-pressed', 'false'));
+    toneString = -1;
+    neck.refresh();
   }
+
+  // ---------- Neck: 3+3 headstock, nut, rosewood board ----------
+  const neck = (() => {
+    const NS = 'http://www.w3.org/2000/svg';
+    const svg = $('#neck');
+    const mk = (t, a, p = svg) => { const e = document.createElementNS(NS, t); for (const k in a) e.setAttribute(k, a[k]); p.appendChild(e); return e; };
+    const NUT = 150, END = 380, X0 = 117, DX = 25.2;
+    const sx = i => X0 + i * DX;
+    // tuner posts: low E, A, D on the left (bottom to top), G, B, high E on the right (top to bottom)
+    const POSTS = [[112, 122], [112, 82], [112, 42], [248, 42], [248, 82], [248, 122]];
+    const WIDTH = [3.2, 2.7, 2.2, 1.7, 1.3, 1.0];
+    const WOUND = '#c7b48c', PLAIN = '#d8d4c8', LIT = '#F5B83D', OK = '#5fce4f';
+
+    // tuner keys (shafts go under the headstock)
+    POSTS.forEach(([px, py]) => {
+      const left = px < 180;
+      mk('rect', { x: left ? 70 : 270, y: py - 3, width: 20, height: 6, fill: '#9c998f' });
+      mk('rect', { x: left ? 38 : 292, y: py - 10, width: 30, height: 20, rx: 8, fill: '#d8d4c8', stroke: '#8a877e', 'stroke-width': 1.5 });
+    });
+    mk('path', { d: 'M105 158 L92 118 Q82 60 92 26 Q100 8 130 8 L230 8 Q260 8 268 26 Q278 60 268 118 L255 158 Z', fill: '#1a1918', stroke: '#4a463f', 'stroke-width': 1.5 });
+    // fretboard, frets (true 12-TET spacing), dot inlays at 3 and 5
+    mk('rect', { x: 105, y: 158, width: 150, height: END - 158, fill: '#3a2a1f' });
+    const fy = n => 158 + 840 * (1 - Math.pow(2, -n / 12));
+    for (let n = 1; n <= 5; n++) mk('rect', { x: 105, y: fy(n) - 1.5, width: 150, height: 3, fill: '#bdb9ae' });
+    [3, 5].forEach(n => mk('circle', { cx: 180, cy: (fy(n - 1) + fy(n)) / 2, r: 6, fill: '#EFE8AE' }));
+    mk('rect', { x: 103, y: NUT, width: 154, height: 8, rx: 2, fill: '#EFE8AE' });
+
+    const items = STRINGS.map((s, i) => {
+      const [px, py] = POSTS[i], x = sx(i), num = 6 - i;
+      const g = mk('g', { class: 'str', role: 'button', tabindex: 0, 'aria-label': `Corde ${num}, ${s.name}`, 'aria-pressed': 'false' });
+      mk('rect', { class: 'hit', x: x - DX / 2, y: NUT - 4, width: DX, height: 440 - NUT + 4, fill: 'transparent' }, g);
+      const line = mk('polyline', {
+        points: `${px},${py} ${x},${NUT + 4} ${x},${END}`, fill: 'none',
+        stroke: i < 4 ? WOUND : PLAIN, 'stroke-width': WIDTH[i], 'stroke-linecap': 'round', 'stroke-linejoin': 'round',
+      }, g);
+      const check = mk('circle', { cx: x, cy: 392, r: 4, fill: OK, visibility: 'hidden' }, g);
+      mk('text', { class: 'snum', x, y: 414, 'text-anchor': 'middle' }, g).textContent = num;
+      mk('text', { class: 'sname', x, y: 432, 'text-anchor': 'middle' }, g).textContent = s.name;
+      const toggle = () => (toneString === i ? stopTone() : playTone(i));
+      g.addEventListener('click', toggle);
+      g.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggle(); } });
+      return { g, line, check, color: i < 4 ? WOUND : PLAIN, width: WIDTH[i] };
+    });
+    // string posts on top of the strings
+    POSTS.forEach(([px, py]) => mk('circle', { cx: px, cy: py, r: 6, fill: '#bdb9ae', stroke: '#8a877e', 'stroke-width': 1.5 }));
+
+    let detected = -1, lastDetect = 0;
+    const tunedSet = new Set();
+    function refresh() {
+      items.forEach((it, i) => {
+        const lit = i === toneString || i === detected;
+        it.g.classList.toggle('lit', lit);
+        it.g.setAttribute('aria-pressed', i === toneString);
+        it.line.setAttribute('stroke', lit ? LIT : it.color);
+        it.line.setAttribute('stroke-width', lit ? it.width + 1.2 : it.width);
+        if (lit) it.line.setAttribute('filter', 'url(#glow)'); else it.line.removeAttribute('filter');
+        it.check.setAttribute('visibility', tunedSet.has(i) ? 'visible' : 'hidden');
+      });
+    }
+    // nearest open string within 2.5 semitones of the detected pitch
+    function nearest(freq) {
+      let best = -1, dist = 2.5;
+      STRINGS.forEach((s, i) => { const d = Math.abs(12 * Math.log2(freq / stringFreq(s))); if (d < dist) { dist = d; best = i; } });
+      return best;
+    }
+    function setDetected(i) { lastDetect = performance.now(); if (i !== detected) { detected = i; refresh(); } }
+    function markTuned(i) { if (!tunedSet.has(i)) { tunedSet.add(i); refresh(); } }
+    function clearTuned() { tunedSet.clear(); refresh(); }
+    // detected string fades out with the needle, after 4 s of silence
+    function tick(now) { if (detected >= 0 && now - lastDetect > 4000) { detected = -1; refresh(); } }
+    refresh();
+    return { refresh, nearest, setDetected, markTuned, clearTuned, tick };
+  })();
 
   // presets
   function renderPresets() {
@@ -690,9 +811,7 @@
 
   document.querySelectorAll('.tabs button').forEach(b => b.onclick = () => {
     document.querySelectorAll('.tabs button').forEach(x => x.setAttribute('aria-selected', x === b));
-    document.querySelectorAll('[data-panel]').forEach(p => p.hidden = p.dataset.panel !== b.dataset.tab);
-    if (b.dataset.tab !== 'accord' && ctx) stopTone();
-  });
+    document.querySelectorAll('[data-panel]').forEach(p => p.hidden = p.dataset.panel !== b.dataset.tab);  });
 
   document.addEventListener('keydown', e => {
     if (e.target.tagName === 'INPUT' || S.mode === 'tuner') return;
@@ -765,6 +884,7 @@
       advice.textContent = tuned ? 'Accordé' : near ? 'Juste' : cents < 0 ? 'Serre la corde' : 'Détends la corde';
       advice.classList.toggle('ok', near && !tuned);
       advice.classList.toggle('tuned', tuned);
+      return tuned;
     }
     function rest() {
       target = -55; idle = true; setHeld(false);
@@ -790,6 +910,7 @@
     requestAnimationFrame(frame);
     return { feed, onFrame: h => hooks.push(h) };
   })();
+  tuner.onFrame(neck.tick);
 
   // ---------- Pitch detection (microphone) ----------
   const NOTE_NAMES = ['Do', 'Do♯', 'Ré', 'Ré♯', 'Mi', 'Fa', 'Fa♯', 'Sol', 'Sol♯', 'La', 'La♯', 'Si'];
@@ -849,11 +970,13 @@
     mic.buf = new Float32Array(mic.analyser.fftSize);
     src.connect(mic.analyser);
     mic.recent = [];
+    neck.clearTuned();
     $('#micBtn').textContent = 'Couper le micro'; $('#micBtn').classList.add('on');
   }
   function stopMic() {
     if (mic.stream) mic.stream.getTracks().forEach(t => t.stop());
     mic.stream = null; mic.analyser = null;
+    neck.setDetected(-1);
     try { if (navigator.audioSession) navigator.audioSession.type = 'playback'; } catch (e) {}
     $('#micBtn').textContent = 'Activer le micro'; $('#micBtn').classList.remove('on');
   }
@@ -868,7 +991,10 @@
     const med = [...mic.recent].sort((x, y) => x - y)[mic.recent.length >> 1];
     const midi = 69 + 12 * Math.log2(med / S.a4);
     const n = Math.round(midi);
-    tuner.feed((midi - n) * 100, NOTE_NAMES[((n % 12) + 12) % 12] + (Math.floor(n / 12) - 1), med);
+    const tuned = tuner.feed((midi - n) * 100, NOTE_NAMES[((n % 12) + 12) % 12] + (Math.floor(n / 12) - 1), med);
+    const s = neck.nearest(med);
+    neck.setDetected(s);
+    if (tuned && s >= 0 && n === STRINGS[s].midi) neck.markTuned(s); // green mark only on the exact open-string note
   });
 
   function setMode(m) {
@@ -878,12 +1004,11 @@
     $('#modeTuner').hidden = m !== 'tuner';
     $('#meta').hidden = m !== 'metro';
     if (m === 'tuner' && running) stop();
-    if (m === 'tuner' && ctx) stopTone();
+    if (m !== 'tuner' && ctx) stopTone();
     if (m !== 'tuner' && mic.stream) stopMic();
   }
   document.querySelectorAll('.modes button').forEach(b => b.onclick = () => setMode(b.dataset.mode));
 
-  renderStrings();
   renderAll();
   setMode(S.mode === 'tuner' ? 'tuner' : 'metro');
 
